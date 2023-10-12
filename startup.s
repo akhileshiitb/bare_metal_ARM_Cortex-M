@@ -64,6 +64,16 @@ _main_stack_pointer_init:
 _ps_stack_pointer_init:
 		.word 0x2000F000  // PSP at MSP - 4KB
 
+.align 2
+.thumb
+.global _enter_unpriv
+.thumb_func
+.type _enter_unpriv, %function 
+_enter_unpriv:
+		mrs r0, control 
+		orr r0, r0, #(1<<0)
+		msr control, r0
+		bx lr
 
 .end
 
@@ -75,5 +85,10 @@ Hence when we define symbol add .thumb_func for all assembly functions. This wil
 set lsbit to 1 whenever symbol is referred. see. _start and _hard_fault definition above. 
 
 .syntax unified : asks GNU assembler to use unified syntax. 
+
+jumping between priv-unpriv thread modes: 
+you can jump from priv thread mode to unpriv thread by writin to control.bit0. But you can not jump 
+back to priv from unpriv mode (its priv break). Hence you need to generate exception (eg. SVC) to 
+jump in handler mode and come back in priv thread mode. 
 
 */

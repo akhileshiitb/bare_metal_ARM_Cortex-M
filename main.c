@@ -15,14 +15,27 @@ extern uint32_t _set_control(uint32_t set_control);
 // function to check if we are in priviledged mode
 extern uint32_t _is_priv(void);
 
+extern void _system_select_msp();
+extern void _system_select_psp();
+
+
+
 int add (int a, int b)
 {
-		return a + b; 
+		return (a + b );  // should return 2*a
+}
+
+/* Note while chaning stack pointer on the fly only call void functions
+ * if paramets needs to return, return by reference. 
+ * */
+void add_psp(uint32_t a, uint32_t b, uint32_t* result){
+		*result = add(a,b); 
 }
 
 
 int main(){
-		int var = 20; 
+		uint32_t var = 20; 
+		uint32_t stuck = 100; 
 		uint32_t ret;
 		uint32_t priv; // Store state of execution mode
 		uint32_t primask;
@@ -51,6 +64,11 @@ int main(){
 		ret = _set_basepri(0x0);
 
 		control = _get_control(); // should have bit 0 as 0 as it is priv mode.
+								  //
+		// select PSP: process stack pointer
+		_system_select_psp();
+		add_psp (0xFA00, 0x00DA, &var); // this function is executed using Process Stack pointer
+		_system_select_msp();
 
 
 /* -------------Unpriv-thread-entry--------------------------------------------- */
@@ -65,7 +83,9 @@ int main(){
 		ret = _set_basepri(0x2); // should return failure (0xFF) as sepcial reg can not be written from unpriv state
 		control = _get_control(); // should how bit 0 as set as it is unpriv mode
 
-		while (var != 10)
+
+
+		while (stuck != 0)
 		{
 		;
 		}

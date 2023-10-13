@@ -198,6 +198,44 @@ _set_control:
 		mov r0, #0xAA 
 		b L4
 
+.text
+.align 2 
+.thumb
+.thumb_func
+.global _isb
+.type _isb, %function 
+_isb:
+		isb
+		bx lr
+
+.text 
+.align 2 
+.thumb 
+.thumb_func
+.global _system_select_msp
+.type _system_select_msp, %function 
+_system_select_msp:
+		// make sure we do not use any stack here 
+		mrs r0, control 
+		and r0, r0, #~(1<<1)
+		msr control, r0
+		isb
+		bx lr
+
+.text 
+.align 2 
+.thumb 
+.thumb_func
+.global _system_select_psp
+.type _system_select_psp, %function 
+_system_select_psp:
+		// make sure we do not use any stack here 
+		mrs r0, control 
+		orr r0, r0, #(1<<1)
+		msr control, r0
+		isb
+		bx lr
+		
 .end
 
 

@@ -18,6 +18,8 @@ extern uint32_t _is_priv(void);
 extern void _system_select_msp();
 extern void _system_select_psp();
 
+extern void _system_svc_call(uint32_t svc_number);
+
 
 
 int add (int a, int b)
@@ -83,7 +85,7 @@ int main(){
 		ret = _set_basepri(0x2); // should return failure (0xFF) as sepcial reg can not be written from unpriv state
 		control = _get_control(); // should how bit 0 as set as it is unpriv mode
 
-
+		_system_svc_call(0x0);
 
 		while (stuck != 0)
 		{

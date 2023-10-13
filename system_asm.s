@@ -235,6 +235,18 @@ _system_select_psp:
 		msr control, r0
 		isb
 		bx lr
+
+.text 
+.align 2 
+.thumb
+.thumb_func
+.global _system_svc_call
+.type _system_svc_call, %function
+_system_svc_call:
+		//svc #0x0
+		.word 0b1101111100000000 // encoded format of above SVC instruction
+		// Above encoding for SVC is taken from armv7-m architecture reference manual
+	    bx lr	
 		
 .end
 

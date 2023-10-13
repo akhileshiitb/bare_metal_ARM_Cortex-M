@@ -1,5 +1,6 @@
 .extern main 
 .syntax unified 
+.extern system_svc_handler
 
 .text
 .align 2
@@ -9,6 +10,19 @@ _vector_table:
 		.word _start
 		.word _nmi_handler
 		.word _hard_fault
+		.word _mem_manage_fault_handler
+		.word _bus_fault_handler
+		.word _usage_fault_handler
+		.word _sec_fault_handler
+		.word 0x0
+		.word 0x0
+		.word 0x0
+		.word _svc_handler
+		.word _debug_monitor_handler
+		.word 0x0
+		.word _pend_sv_handler
+		.word _systick_handler
+		.word _ext_int0_handler
 
 .text
 .align 2
@@ -51,6 +65,54 @@ _hard_fault:
 .thumb_func
 _nmi_handler:
 		b _nmi_handler
+
+.align 2 
+.thumb_func
+_mem_manage_fault_handler:
+		b _mem_manage_fault_handler 
+
+.align 2 
+.thumb_func
+_bus_fault_handler:
+		b  _bus_fault_handler 
+
+.align 2 
+.thumb_func
+_usage_fault_handler:
+		b _usage_fault_handler  
+
+.align 2 
+.thumb_func
+_sec_fault_handler:
+		b _sec_fault_handler 
+
+.align 2 
+.thumb_func
+_svc_handler:
+		push {lr}
+		bl  system_svc_handler
+		pop {lr}
+		bx lr // triggeres exception return sequence
+
+.align 2 
+.thumb_func
+_debug_monitor_handler:
+		b _debug_monitor_handler 
+
+.align 2 
+.thumb_func
+_pend_sv_handler:
+		b _pend_sv_handler 
+
+.align 2 
+.thumb_func
+_systick_handler:
+		b _systick_handler 
+
+.align 2 
+.thumb_func
+_ext_int0_handler:
+		b _ext_int0_handler 
 
 .align 2 
 .thumb 

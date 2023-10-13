@@ -20,4 +20,20 @@ extern uint32_t _set_control(uint32_t set_control);
 
 extern void _isb(void);
 
+void system_svc_handler(uint32_t svc_num){
+		switch (svc_num){
+				case 0: 
+						break; 
+
+				case 1: 
+						break; 
+						
+				case 2: 
+						break; 
+
+				defalut:
+						break;
+		}
+}
+
 

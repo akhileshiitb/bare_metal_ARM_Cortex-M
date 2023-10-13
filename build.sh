@@ -4,9 +4,10 @@ arm-none-eabi-gcc -mthumb  -march=armv7e-m  -g -S -x c main.c -o main.s
 # Assemble
 arm-none-eabi-as -mthumb -march=armv7e-m main.s  -o main.obj
 arm-none-eabi-as -mthumb -march=armv7e-m startup.s  -o startup.obj
+arm-none-eabi-as -mthumb -march=armv7e-m system.s  -o system.obj
 
 # linking 
-arm-none-eabi-ld -o image.elf --thumb-entry=_start -Ttext 0x0 -Tdata 0x20000000 -Map image.map startup.obj  main.obj
+arm-none-eabi-ld -o image.elf --thumb-entry=_start -Ttext 0x0 -Tdata 0x20000000 -Map image.map startup.obj  main.obj system.obj
 
 
 # objdump .. for binary creation 

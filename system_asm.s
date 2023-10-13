@@ -197,6 +197,24 @@ _set_control:
 		msr control, r0
 		mov r0, #0xAA 
 		b L4
+/* 
+function to set control register when executing in handler mode
+handler mode is always proviledged, hence no need to call _is_priv() 
+uint32_t _set_control_handler(uint32_t set_control_handler);
+return: 
+0xAA: success (This function always returns success)
+0xFF: failure (when called from unpriviledged state)
+*/
+.text 
+.align 2 
+.thumb 
+.thumb_func
+.global _set_control_handler
+.type _set_control_handler, %function 
+_set_control_handler:
+		msr control, r0
+		mov r0, #0xAA 
+		bx lr
 
 .text
 .align 2 

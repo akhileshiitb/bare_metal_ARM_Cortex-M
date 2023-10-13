@@ -87,6 +87,11 @@ int main(){
 
 		_system_svc_call(0x0);
 
+		// Enter into Priv thread mode using SVC
+		_system_svc_call(0x2); 
+
+		// now should be in Priv Thread mode
+
 		while (stuck != 0)
 		{
 		;

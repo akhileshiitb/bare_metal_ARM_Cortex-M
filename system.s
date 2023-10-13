@@ -76,6 +76,21 @@ _get_basepri:
 		bx lr
 
 /* 
+function to get control CPU register
+uint32_t _get_control(void);
+*/
+.text 
+.align 2 
+.thumb 
+.thumb_func
+.global _get_control
+.type _get_control, %function 
+_get_control:
+		mrs r0, control 
+		bx lr
+
+
+/* 
 function to set primask special CPU register
 uint32_t _set_primask(uint32_t set_primask);
 return: 
@@ -155,6 +170,31 @@ _set_basepri:
 		bne L3
 		pop {r0}
 		msr basepri, r0
+		mov r0, #0xAA 
+		b L4
+
+/* 
+function to set control register
+uint32_t _set_control(uint32_t set_control);
+return: 
+0xAA: success
+0xFF: failure (when called from unpriviledged state)
+*/
+.text 
+.align 2 
+.thumb 
+.thumb_func
+.global _set_control
+.type _set_control, %function 
+_set_control:
+		// check if we are executing in priv state
+		push {lr}
+		push {r0}
+		bl _is_priv
+		cmp r0, #1
+		bne L3
+		pop {r0}
+		msr control, r0
 		mov r0, #0xAA 
 		b L4
 

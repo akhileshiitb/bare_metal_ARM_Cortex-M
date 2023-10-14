@@ -24,6 +24,20 @@ extern void _system_svc_call(uint32_t svc_number);
 
 extern void _isb(void);
 
+// global variables 
+// Hold number of systick interrupts
+uint64_t gTicks = 0; 
+
+/* Systic register layout */
+typedef struct systick_reg_t {
+		volatile uint32_t SYSTICK_CSR; 
+		volatile uint32_t SYSTICK_RVR;
+		volatile uint32_t SYSTICK_CVR; 
+		volatile uint32_t SYSTICK_CALIB;
+}systick_reg; 
+
+static systick_reg* ptr_systick = (systick_reg*) 0xE000E010; // pointer to systic MMR space
+
 void system_svc_handler(uint32_t svc_num){
 		switch (svc_num){
 				case 0: 
@@ -63,6 +77,46 @@ void system_enter_priv()
 void system_enter_unpriv()
 {
 		_enter_unpriv();
+}
+
+/* *
+ * system function to configure systick and enable interrupt from it. 
+ * */
+void system_systick_config()
+{
+		// Read the TENMS field  of CALIB
+		uint32_t tenms_count; 
+
+		tenms_count = ptr_systick->SYSTICK_CALIB; 
+		tenms_count &= 0xFFFFFF; // mask 24 lsb bits 
+
+		// set Reload value register RVR to TENMS
+		ptr_systick->SYSTICK_RVR = tenms_count; 
+
+		// Select the clock source for systick: CPU clock
+		ptr_systick->SYSTICK_CSR |= (1U << 2U);
+
+		// enable the interrupt
+		ptr_systick->SYSTICK_CSR |= (1U << 1U);
+
+		// enable the systick counter
+		ptr_systick->SYSTICK_CSR |= (1U << 0U);
+
+}
+
+void system_systick_handler()
+{
+		// ACK systick interrupt write to CVR and read CSR 
+		volatile uint32_t csr_val; 
+		csr_val = ptr_systick->SYSTICK_CSR; 
+
+		// dummy write to CVR
+		ptr_systick->SYSTICK_CVR = 0x0; 
+
+		// increament systick counter
+		gTicks++; 
+
+		// Do systick handler tasks
 }
 
 

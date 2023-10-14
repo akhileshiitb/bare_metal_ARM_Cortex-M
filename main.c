@@ -3,6 +3,7 @@
 
 extern void system_enter_unpriv();
 extern void system_enter_priv();
+extern void system_systick_config();
 
 extern uint32_t _get_primask();
 extern uint32_t _get_faultmask();
@@ -94,6 +95,9 @@ int main(){
 		priv = _is_priv(); // should return priv = 1 as we are in priv thread mode back again
 
 		// now should be in Priv Thread mode
+		
+		// Enalble systick interrupt
+		system_systick_config();
 
 		while (stuck != 0)
 		{

@@ -1,6 +1,7 @@
 .extern main 
 .syntax unified 
 .extern system_svc_handler
+.extern system_systick_handler 
 
 .text
 .align 2
@@ -107,7 +108,10 @@ _pend_sv_handler:
 .align 2 
 .thumb_func
 _systick_handler:
-		b _systick_handler 
+		push {lr}
+		bl system_systick_handler
+		pop {lr}
+		bx lr
 
 .align 2 
 .thumb_func

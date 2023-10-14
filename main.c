@@ -29,8 +29,7 @@ extern uint32_t system_disable_exceptions();
 extern uint32_t system_enable_hardfault();
 extern uint32_t system_disable_hardfault();
 
-
-
+extern void _trigger_usage_fault();
 
 int add (int a, int b)
 {
@@ -121,9 +120,12 @@ int main(){
 				_system_svc_call(0x0U); // This SVC call should work
 		}
 
+		_trigger_usage_fault(); 
+	
 		while (stuck != 0)
 		{
 		;
 		}
+
 		return ret; 
 }

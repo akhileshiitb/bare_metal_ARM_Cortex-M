@@ -286,7 +286,18 @@ _system_svc_call:
 		.word 0b1101111100000000 // encoded format of above SVC instruction
 		// Above encoding for SVC is taken from armv7-m architecture reference manual
 	    bx lr	
+
+.text
+.align 2 
+.thumb
+.thumb_func
+.global _trigger_usage_fault
+.type _trigger_usage_fault, %function 
+_trigger_usage_fault:
+		.word 0xFFFFFFFF // undefined intruction
+		bx lr
 		
 .end
+
 
 

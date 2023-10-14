@@ -3,6 +3,7 @@
 .extern system_svc_handler
 .extern system_systick_handler 
 .extern gHardFault_counter 
+.extern gUsageFault_counter 
 
 .text
 .align 2
@@ -86,7 +87,18 @@ _bus_fault_handler:
 .align 2 
 .thumb_func
 _usage_fault_handler:
-		b _usage_fault_handler  
+		// modify return address on exception stack frame
+		// as we return from invalid instruction, to avoid executing
+		// same instruction on return, increament return addr by 4
+		ldr r0, [sp, #24]
+		add r0, r0, #4
+		str r0, [sp, #24]
+		// update gUsageFault _counter
+		ldr r1, __gUsageFault_counter
+		ldr r0, [r1]
+		add r0, r0, #1
+		str r0, [r1]
+		bx lr   
 
 .align 2 
 .thumb_func
@@ -140,6 +152,11 @@ _ps_stack_pointer_init:
 .thumb 
 __gHardFault_counter:
 		.word gHardFault_counter 
+
+.align 2 
+.thumb 
+__gUsageFault_counter:
+		.word gUsageFault_counter 
 
 .align 2
 .thumb

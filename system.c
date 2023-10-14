@@ -32,6 +32,9 @@ uint64_t gTicks = 0;
 // Hard fault counter: hold number of hard faults generated
 uint32_t gHardFault_counter = 0; 
 
+// Usage fault counter: hold number of hard faults generated
+uint32_t gUsageFault_counter = 0; 
+
 /* Systic register layout */
 typedef struct systick_reg_t {
 		volatile uint32_t SYSTICK_CSR; 
@@ -41,6 +44,12 @@ typedef struct systick_reg_t {
 }systick_reg; 
 
 static systick_reg* ptr_systick = (systick_reg*) 0xE000E010; // pointer to systic MMR space
+
+// SBC MMRs for exception handeling
+#define SHCSR	*(uint32_t *)0xE000ED24
+#define SHPR1	*(uint32_t *)0xE000ED18 
+#define SHPR2	*(uint32_t *)0xE000ED1C 
+#define SHPR3	*(uint32_t *)0xE000ED20
 
 void system_svc_handler(uint32_t svc_num){
 		switch (svc_num){
@@ -184,6 +193,27 @@ uint32_t system_exceptions_init()
 				// set base priority to lowest level 
 				ret = system_set_basepri(0xFF);
 		}
+
+		// Set priorities of system exceptions 
+		// FAULTs -> SVC (High) -> SYSTICK -> PENSV
+		
+		// all faults : memMange, Bus faults, usage fault = 0x2U
+		// Refer: ARMv7-m technical reference manual for register fields
+		SHPR1 = (0x02U << 0U) | (0x02U << 8U) | (0x02U << 16U); 
+
+		// SVC : 0x4U
+		SHPR2 = (0x04U << 24U);
+
+		// SYSTICK: 0x6U 
+		SHPR3 |= (0x06U << 24U); 
+
+		// PENDSV : 0x08U
+		SHPR3 |= (0x08 << 16U);
+																
+
+		// Enable system fault exceptions
+		// enable usage fault, Bus fault, memMange fault (bit 16,17,18 set)
+		SHCSR |= (0b111 << 16U);
 
 		return ret; 
 

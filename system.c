@@ -8,6 +8,7 @@
 
 /* External interfaces from system.s */
 extern void _enter_unpriv();
+
 extern uint32_t _get_primask();
 extern uint32_t _get_faultmask();
 extern uint32_t _get_basepri();
@@ -18,6 +19,8 @@ extern uint32_t _set_faultmask(uint32_t faultmask);
 extern uint32_t _set_basepri(uint32_t basepri);
 extern uint32_t _set_control(uint32_t set_control);
 extern uint32_t _set_control_handler(uint32_t set_control);
+
+extern void _system_svc_call(uint32_t svc_number);
 
 extern void _isb(void);
 
@@ -44,6 +47,22 @@ void system_svc_handler(uint32_t svc_num){
 				defalut:
 						break;
 		}
+}
+
+/* Function to enter into Priviledged thread mode */
+void system_enter_priv()
+{
+		// Generate SVC call #2 
+		// This will take us in handler mode, which is
+		// priviledged and alloes to modify control register
+		_system_svc_call(2U);
+
+
+}
+/* Function to enter into unpriviledged thread mode */
+void system_enter_unpriv()
+{
+		_enter_unpriv();
 }
 
 

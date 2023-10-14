@@ -1,7 +1,9 @@
 #include<stdio.h>
 #include<stdint.h>
 
-extern void _enter_unpriv();
+extern void system_enter_unpriv();
+extern void system_enter_priv();
+
 extern uint32_t _get_primask();
 extern uint32_t _get_faultmask();
 extern uint32_t _get_basepri();
@@ -75,7 +77,7 @@ int main(){
 
 /* -------------Unpriv-thread-entry--------------------------------------------- */
 
-		_enter_unpriv();
+		system_enter_unpriv();
 		var = add (3, 4); // execute this in unprivileged thread mode
 
 		priv = _is_priv(); // should return priv = 0 as we are in unpriv mode
@@ -87,8 +89,9 @@ int main(){
 
 		_system_svc_call(0x0);
 
-		// Enter into Priv thread mode using SVC
-		_system_svc_call(0x2); 
+		// Enter into Priv thread mode using SVC calls
+		system_enter_priv();
+		priv = _is_priv(); // should return priv = 1 as we are in priv thread mode back again
 
 		// now should be in Priv Thread mode
 

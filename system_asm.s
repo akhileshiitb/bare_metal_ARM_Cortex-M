@@ -124,6 +124,27 @@ L4:
 		bx lr
 
 /* 
+function to set primask special CPU register
+uint32_t _set_primask_raw(uint32_t set_primask);
+This version of function does not check for execution mode
+it just simply goes and writes. Always return success
+return: 
+0xAA: success
+0xFF: failure (when called from unpriviledged state)
+*/
+.text 
+.align 2 
+.thumb 
+.thumb_func
+.global _set_primask_raw
+.type _set_primask_raw, %function 
+_set_primask_raw:
+		// check if we are executing in priv state
+		msr primask, r0
+		mov r0,#0xAA 
+		bx lr
+
+/* 
 function to set faultmask special CPU register
 uint32_t _set_faultmask(uint32_t set_faultmask);
 return: 

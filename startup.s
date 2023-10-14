@@ -2,6 +2,7 @@
 .syntax unified 
 .extern system_svc_handler
 .extern system_systick_handler 
+.extern gHardFault_counter 
 
 .text
 .align 2
@@ -59,7 +60,12 @@ loop:
 .global _hard_fault
 .thumb_func
 _hard_fault:
-		b _hard_fault
+		// increament gHardFault_counter and simlpy return
+		ldr r1, __gHardFault_counter // get address of gHadFaultCounter
+		ldr r0, [r1] // read gHardFault_counter
+		add r0, r0, #1 // increament it
+		str r0, [r1] // store back
+		bx lr 
 
 .align 2 
 .global _nmi_handler
@@ -129,6 +135,11 @@ _main_stack_pointer_init:
 .global _ps_stack_pointer_init
 _ps_stack_pointer_init:
 		.word 0x2000F000  // PSP at MSP - 4KB
+
+.align 2 
+.thumb 
+__gHardFault_counter:
+		.word gHardFault_counter 
 
 .align 2
 .thumb

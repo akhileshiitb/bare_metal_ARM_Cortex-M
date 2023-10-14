@@ -15,6 +15,7 @@ extern uint32_t _get_basepri();
 extern uint32_t _get_control();
 
 extern uint32_t _set_primask(uint32_t primask);
+extern uint32_t _set_primask_raw(uint32_t primask);
 extern uint32_t _set_faultmask(uint32_t faultmask);
 extern uint32_t _set_basepri(uint32_t basepri);
 extern uint32_t _set_control(uint32_t set_control);
@@ -27,6 +28,9 @@ extern void _isb(void);
 // global variables 
 // Hold number of systick interrupts
 uint64_t gTicks = 0; 
+
+// Hard fault counter: hold number of hard faults generated
+uint32_t gHardFault_counter = 0; 
 
 /* Systic register layout */
 typedef struct systick_reg_t {
@@ -118,5 +122,70 @@ void system_systick_handler()
 
 		// Do systick handler tasks
 }
+/* Function enables system wide exceptions by clearing primask special function
+ * register
+ * This function can be called from handler or priviledged thread mode
+ * */
+uint32_t system_enable_exceptions()
+{
+		return _set_primask_raw(0x0U);
+}
 
+/* *
+ * Function disbles system wide exceptions by setting primask special function 
+ * register
+ * This function can be called from handler or priviledged thread mode
+ * */
+uint32_t system_disable_exceptions()
+{
+		return _set_primask_raw(0x1U);
+}
+
+/* 
+ * This function eanbles hard fault by wirting to FAULTMASK special function register
+ * */
+uint32_t system_enable_hardfault()
+{
+		return _set_faultmask(0x0U);
+}
+/* *
+ * This function disables hardfault by wirintg to FAULT mask special function register
+ * */
+uint32_t system_disable_hardfault()
+{
+		return _set_faultmask(0x1U);
+}
+
+/* *
+ * This function sets BASEPRI sepcial funtion register
+ * sets the minumum priority level for processor to take exception. 
+ * when 0x0 , does not have effect
+ * when non-zero: masks out all expcetions with priority lower then value in basepri
+ * This function should be called from priviledged thread mode only 
+ * */
+uint32_t system_set_basepri(uint32_t basepri)
+{
+		return _set_basepri(basepri);
+}
+
+uint32_t system_exceptions_init()
+{
+		uint32_t ret = 0; 
+		// clear primask to enable all exceptions
+		ret = system_enable_exceptions();
+		if (ret == 0xAA)
+		{
+				// Enable Hard fault
+				ret = system_enable_hardfault();
+		}
+
+		if (ret == 0xAA)
+		{
+				// set base priority to lowest level 
+				ret = system_set_basepri(0xFF);
+		}
+
+		return ret; 
+
+}
 

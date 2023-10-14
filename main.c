@@ -23,6 +23,13 @@ extern void _system_select_psp();
 
 extern void _system_svc_call(uint32_t svc_number);
 
+extern uint32_t system_exceptions_init();
+extern uint32_t system_enable_exceptions();
+extern uint32_t system_disable_exceptions();
+extern uint32_t system_enable_hardfault();
+extern uint32_t system_disable_hardfault();
+
+
 
 
 int add (int a, int b)
@@ -47,6 +54,8 @@ int main(){
 		uint32_t faultmask;
 		uint32_t basepri;
 		uint32_t control; 
+
+		system_exceptions_init();
 
 		priv = _is_priv(); // should return priv = 1 as we are in priv mode
 						   
@@ -98,6 +107,19 @@ int main(){
 		
 		// Enalble systick interrupt
 		system_systick_config();
+
+		// Check exception masking 
+		ret = system_disable_exceptions(); // disable system wide exceptions 
+		if (ret == 0xAA)
+		{
+				_system_svc_call(0x0U); // This SVC call should not generate exception 
+				// This should generate hard fault
+		}
+		ret = system_enable_exceptions(); // enable system wide exceptions
+		if (ret == 0xAA)
+		{
+				_system_svc_call(0x0U); // This SVC call should work
+		}
 
 		while (stuck != 0)
 		{

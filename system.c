@@ -130,6 +130,10 @@ void system_systick_handler()
 		gTicks++; 
 
 		// Do systick handler tasks
+
+		// Call SVC . As we have defined SVC priority more than systick, systick should preempt. 
+		// This checks out nested vectoring
+		_system_svc_call(0x0);
 }
 /* Function enables system wide exceptions by clearing primask special function
  * register

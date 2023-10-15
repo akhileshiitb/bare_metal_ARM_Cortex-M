@@ -30,6 +30,7 @@ extern uint32_t system_enable_hardfault();
 extern uint32_t system_disable_hardfault();
 
 extern void _trigger_usage_fault();
+extern void system_pendSV_call();
 
 int add (int a, int b)
 {
@@ -121,6 +122,8 @@ int main(){
 		}
 
 		_trigger_usage_fault(); 
+
+		system_pendSV_call(0x0U);
 	
 		while (stuck != 0)
 		{

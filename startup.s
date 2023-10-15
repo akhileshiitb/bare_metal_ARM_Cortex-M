@@ -4,6 +4,7 @@
 .extern system_systick_handler 
 .extern gHardFault_counter 
 .extern gUsageFault_counter 
+.extern system_pendSV_handler 
 
 .text
 .align 2
@@ -121,7 +122,10 @@ _debug_monitor_handler:
 .align 2 
 .thumb_func
 _pend_sv_handler:
-		b _pend_sv_handler 
+		push {lr}
+		bl system_pendSV_handler
+		pop {lr}
+		bx lr // triggeres exception return
 
 .align 2 
 .thumb_func

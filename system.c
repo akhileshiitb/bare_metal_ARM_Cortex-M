@@ -25,6 +25,8 @@ extern void _system_svc_call(uint32_t svc_number);
 
 extern void _isb(void);
 
+void system_pendSV_call(uint32_t pendSV_number);
+
 // global variables 
 // Hold number of systick interrupts
 uint64_t gTicks = 0; 
@@ -34,6 +36,9 @@ uint32_t gHardFault_counter = 0;
 
 // Usage fault counter: hold number of hard faults generated
 uint32_t gUsageFault_counter = 0; 
+
+// Usage counter for pendSV call 
+uint32_t gPendSV_call_counter = 0; 
 
 /* Systic register layout */
 typedef struct systick_reg_t {
@@ -50,6 +55,8 @@ static systick_reg* ptr_systick = (systick_reg*) 0xE000E010; // pointer to systi
 #define SHPR1	*(uint32_t *)0xE000ED18 
 #define SHPR2	*(uint32_t *)0xE000ED1C 
 #define SHPR3	*(uint32_t *)0xE000ED20
+// interrupt control and state register
+#define ICSR	*(uint32_t *)0xE000ED04
 
 void system_svc_handler(uint32_t svc_num){
 		switch (svc_num){
@@ -134,6 +141,9 @@ void system_systick_handler()
 		// Call SVC . As we have defined SVC priority more than systick, systick should preempt. 
 		// This checks out nested vectoring
 		_system_svc_call(0x0);
+
+		// call pendSV 
+		system_pendSV_call(0x0U);
 }
 /* Function enables system wide exceptions by clearing primask special function
  * register
@@ -221,5 +231,36 @@ uint32_t system_exceptions_init()
 
 		return ret; 
 
+}
+
+/* *
+ * Function to trigger pendSV exception
+ * */
+void system_pendSV_call(uint32_t pendSV_number)
+{
+		// set pending status of pendSV in ICSR register
+		ICSR |= (1U<<28U);
+}
+
+/* *
+ * PendSV handler: can be used to trigger context switch
+ * */
+void system_pendSV_handler(uint32_t pendSV_number)
+{
+		// increment pendSV counter 
+		gPendSV_call_counter++; 
+		
+		// execute the required pendSV service
+		switch(pendSV_number)	
+		{
+				case 0: //TODO 
+						break; 
+				case 1: //TODO
+						break; 
+				case 2: //TODO 
+						break; 
+				default:
+						break; 
+		}
 }
 

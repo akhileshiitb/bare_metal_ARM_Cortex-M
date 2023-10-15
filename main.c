@@ -31,6 +31,7 @@ extern uint32_t system_disable_hardfault();
 
 extern void _trigger_usage_fault();
 extern void system_pendSV_call();
+extern void system_trigger_nmi();
 
 int add (int a, int b)
 {
@@ -124,6 +125,9 @@ int main(){
 		_trigger_usage_fault(); 
 
 		system_pendSV_call(0x0U);
+
+		// Trigger NMI fault
+		system_trigger_nmi();
 	
 		while (stuck != 0)
 		{

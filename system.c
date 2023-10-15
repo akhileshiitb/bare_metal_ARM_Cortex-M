@@ -40,6 +40,9 @@ uint32_t gUsageFault_counter = 0;
 // Usage counter for pendSV call 
 uint32_t gPendSV_call_counter = 0; 
 
+// Counter for NMI faults
+uint32_t gNmi_counter = 0; 
+
 /* Systic register layout */
 typedef struct systick_reg_t {
 		volatile uint32_t SYSTICK_CSR; 
@@ -262,5 +265,18 @@ void system_pendSV_handler(uint32_t pendSV_number)
 				default:
 						break; 
 		}
+}
+
+/* *
+ * Function which trigerres NMI exception
+ * */
+void system_trigger_nmi()
+{
+		ICSR |= (1U << 31U);
+}
+
+void system_nmi_handler()
+{
+		gNmi_counter++; 
 }
 

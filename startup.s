@@ -5,6 +5,7 @@
 .extern gHardFault_counter 
 .extern gUsageFault_counter 
 .extern system_pendSV_handler 
+.extern system_nmi_handler 
 
 .text
 .align 2
@@ -73,7 +74,10 @@ _hard_fault:
 .global _nmi_handler
 .thumb_func
 _nmi_handler:
-		b _nmi_handler
+		push {lr}
+		bl system_nmi_handler
+		pop {lr}
+		bx lr
 
 .align 2 
 .thumb_func

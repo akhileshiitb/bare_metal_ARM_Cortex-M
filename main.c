@@ -32,6 +32,7 @@ extern uint32_t system_disable_hardfault();
 extern void _trigger_usage_fault();
 extern void system_pendSV_call();
 extern void system_trigger_nmi();
+extern void system_trigger_interrupt(uint32_t int_num);
 
 int add (int a, int b)
 {
@@ -128,6 +129,12 @@ int main(){
 
 		// Trigger NMI fault
 		system_trigger_nmi();
+
+		// trigger external interrupt 0
+		system_trigger_interrupt(0x0U);
+		// trigger external interrupt 1
+		// This should not trigger interrupt #2 as is is not enabled. 
+		system_trigger_interrupt(0x1U);
 	
 		while (stuck != 0)
 		{

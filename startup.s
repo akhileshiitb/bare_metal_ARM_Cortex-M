@@ -6,6 +6,7 @@
 .extern gUsageFault_counter 
 .extern system_pendSV_handler 
 .extern system_nmi_handler 
+.extern system_ext_interrupt0_handler 
 
 .text
 .align 2
@@ -142,7 +143,10 @@ _systick_handler:
 .align 2 
 .thumb_func
 _ext_int0_handler:
-		b _ext_int0_handler 
+		push {lr}
+		bl system_ext_interrupt0_handler
+		pop {lr}
+		bx lr
 
 .align 2 
 .thumb 

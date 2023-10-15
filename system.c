@@ -43,6 +43,9 @@ uint32_t gPendSV_call_counter = 0;
 // Counter for NMI faults
 uint32_t gNmi_counter = 0; 
 
+// counter for external interrupt 0
+uint32_t gInt0_counter = 0; 
+
 /* Systic register layout */
 typedef struct systick_reg_t {
 		volatile uint32_t SYSTICK_CSR; 
@@ -60,6 +63,11 @@ static systick_reg* ptr_systick = (systick_reg*) 0xE000E010; // pointer to systi
 #define SHPR3	*(uint32_t *)0xE000ED20
 // interrupt control and state register
 #define ICSR	*(uint32_t *)0xE000ED04
+// NVIC registers 
+#define NVIC_IPR0 *(uint32_t *)0xE000E400U // Interrupt priority
+#define NVIC_ISER0	*(uint32_t *)0xE000E100U // Interrupt set enable 
+#define NVIC_ISPR0	*(uint32_t *)0xE000E200U // Interrupt set prnding
+
 
 void system_svc_handler(uint32_t svc_num){
 		switch (svc_num){
@@ -232,6 +240,13 @@ uint32_t system_exceptions_init()
 		// enable usage fault, Bus fault, memMange fault (bit 16,17,18 set)
 		SHCSR |= (0b111 << 16U);
 
+		// Configure external interrupt 0 via NVIC
+		// Set priority and enable external interrupt 0
+		NVIC_IPR0 |= (0x0AU << 0); // pririty 0xA
+
+		// Enable  external interrupt 0
+		NVIC_ISER0 |= (0x1U<<0); 
+
 		return ret; 
 
 }
@@ -278,5 +293,22 @@ void system_trigger_nmi()
 void system_nmi_handler()
 {
 		gNmi_counter++; 
+}
+
+/* *
+ * Function to trigger external interrupt 0 
+ * */
+void system_trigger_interrupt(uint32_t int_num)
+{
+		if (int_num < 31)
+		{
+				NVIC_ISPR0 |= (0x1U << int_num);
+		}
+}
+
+void system_ext_interrupt0_handler()
+{
+	// increament counter
+	gInt0_counter++;	
 }
 

@@ -114,6 +114,7 @@ _sec_fault_handler:
 .align 2 
 .thumb_func
 _svc_handler:
+		ldr r0, [sp] // get SVC argument from stack fram of current exception
 		push {lr}
 		bl  system_svc_handler
 		pop {lr}

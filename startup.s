@@ -180,6 +180,7 @@ _enter_unpriv:
 		mrs r0, control 
 		orr r0, r0, #(1<<0)
 		msr control, r0
+		isb
 		bx lr
 
 .end

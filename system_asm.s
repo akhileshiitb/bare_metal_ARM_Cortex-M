@@ -235,6 +235,7 @@ return:
 _set_control_handler:
 		msr control, r0
 		mov r0, #0xAA 
+		isb
 		bx lr
 
 .text

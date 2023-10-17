@@ -248,6 +248,16 @@ _isb:
 		isb
 		bx lr
 
+.text
+.align 2 
+.thumb
+.thumb_func
+.global _dsb
+.type _dsb, %function 
+_dsb:
+		dsb
+		bx lr
+
 .text 
 .align 2 
 .thumb 

@@ -24,6 +24,7 @@ extern uint32_t _set_control_handler(uint32_t set_control);
 extern void _system_svc_call(uint32_t svc_number);
 
 extern void _isb(void);
+extern void _dsb(void);
 
 void system_pendSV_call(uint32_t pendSV_number);
 
@@ -67,6 +68,18 @@ static systick_reg* ptr_systick = (systick_reg*) 0xE000E010; // pointer to systi
 #define NVIC_IPR0 *(uint32_t *)0xE000E400U // Interrupt priority
 #define NVIC_ISER0	*(uint32_t *)0xE000E100U // Interrupt set enable 
 #define NVIC_ISPR0	*(uint32_t *)0xE000E200U // Interrupt set prnding
+
+// MPU PMSAV7 registers
+typedef struct mpu_registers_t 
+{
+		volatile uint32_t MPU_TYPE; // type
+		volatile uint32_t MPU_CTRL; // control 
+		volatile uint32_t MPU_RNR; // Region number
+		volatile uint32_t MPU_RBAR; // Region base address
+		volatile uint32_t MPU_RASR; // Attribute and size
+}mpu_regs; 
+
+static mpu_regs* ptr_mpu_regs = (mpu_regs *) 0xE000ED90;
 
 
 void system_svc_handler(uint32_t svc_num){
@@ -310,5 +323,110 @@ void system_ext_interrupt0_handler()
 {
 	// increament counter
 	gInt0_counter++;	
+}
+
+static uint32_t mpu_get_num_regions()
+{
+		uint32_t num_regions = 0; 
+		num_regions = ptr_mpu_regs->MPU_TYPE;  
+		num_regions &= (0xFFU << 8U); 
+		num_regions = num_regions >> 8U; 
+		return num_regions; 
+}
+
+static uint32_t mpu_enable()
+{
+		ptr_mpu_regs->MPU_CTRL |= (1U << 0U); 
+		_dsb(); // data sync barrier
+		_isb(); // instuction sync barrier
+		return 0xAAU; 
+}
+
+/* Function enabled defalut memory map as backgound region for Priv mode */
+static uint32_t mpu_enable_priv_default()
+{
+		ptr_mpu_regs->MPU_CTRL |= (1U << 2U);
+		return 0xAAU; 
+}
+/* Function disables default memory for priv access as backgorund region */
+static uint32_t mpu_disable_priv_default()
+{
+		ptr_mpu_regs->MPU_CTRL &= ~(1U << 2U); 
+		return 0xAAU; 
+}
+
+static void mpu_select_region(uint8_t region_num)
+{
+		ptr_mpu_regs->MPU_RNR = region_num; 
+}
+
+static void mpu_set_region_base_addr(uint32_t base_addr)
+{
+		ptr_mpu_regs->MPU_RBAR = (base_addr >> 5U) << 5U; // minimum alignment 
+}
+
+static void mpu_set_region_access_permission(uint8_t ap)
+{
+		ptr_mpu_regs->MPU_RASR &= ~(0b111 << 24U);
+		ptr_mpu_regs->MPU_RASR |= ((ap & 0b111) << 24U);
+}
+
+static void mpu_set_region_execute_permission(uint8_t xn)
+{
+		ptr_mpu_regs->MPU_RASR &= ~(1<< 28U);
+		ptr_mpu_regs->MPU_RASR |= ((xn & 0x1) << 28U);
+}
+
+static void mpu_set_region_size(uint8_t size)
+{
+		ptr_mpu_regs->MPU_RASR &= ~(0b11111 << 1U);
+		ptr_mpu_regs->MPU_RASR |= ((size & 0b11111) << 1); 
+}
+
+static void mpu_region_enable()
+{
+		ptr_mpu_regs->MPU_RASR |= 0b1; 
+}
+
+static void mpu_region_disable()
+{
+		ptr_mpu_regs->MPU_RASR &= ~(0b1);
+}
+
+
+/* Function to initilize static MPU
+ * MPU configuration is as follows: 
+ * Enables privildged backgournd region to access defalut memory map 
+ *
+ * region 1: 
+ * region 2: 
+ *
+ * */
+uint32_t system_mpu_init()
+{
+		uint32_t mpu_regions, ret; 
+		mpu_regions = mpu_get_num_regions();
+		if (mpu_regions == 0x0U)
+		{
+				// MPU is not supported, return error
+				ret = 0xFF; 
+				return ret; 
+		}
+
+		// MPU init
+		mpu_enable_priv_default(); // enable priviledged background region: default system map
+
+		// This should be the last statment
+		mpu_enable();
+
+}
+
+void system_mpu_tests()
+{
+		uint32_t temp; 
+		
+		system_enter_unpriv();
+		temp = ptr_mpu_regs->MPU_TYPE; 
+		system_enter_priv();
 }
 

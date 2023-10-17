@@ -34,6 +34,9 @@ extern void system_pendSV_call();
 extern void system_trigger_nmi();
 extern void system_trigger_interrupt(uint32_t int_num);
 
+extern void system_mpu_init();
+extern void system_mpu_tests();
+
 int add (int a, int b)
 {
 		return (a + b );  // should return 2*a
@@ -135,6 +138,13 @@ int main(){
 		// trigger external interrupt 1
 		// This should not trigger interrupt #2 as is is not enabled. 
 		system_trigger_interrupt(0x1U);
+
+		// Enable MPU 
+		system_disable_exceptions(); 
+		system_mpu_init();
+		system_enable_exceptions();
+
+		system_mpu_tests();
 	
 		while (stuck != 0)
 		{

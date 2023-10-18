@@ -625,3 +625,16 @@ void system_mpu_tests()
 		mpu_disable();
 		
 }
+
+
+void system_print_serial(uint8_t * str)
+{
+		/* Prints string */
+		while (*str != '\0')
+		{
+				/* 0x4000C000 is address of UART TXD of QEMU  machine model */
+				*(uint32_t *)0x4000C000 = *str ; 
+				str++; 
+		}
+}
+

@@ -37,6 +37,8 @@ extern void system_trigger_interrupt(uint32_t int_num);
 extern void system_mpu_init();
 extern void system_mpu_tests();
 
+extern void system_print_serial(uint8_t * str);
+
 int add (int a, int b)
 {
 		return (a + b );  // should return 2*a
@@ -59,6 +61,8 @@ int main(){
 		uint32_t faultmask;
 		uint32_t basepri;
 		uint32_t control; 
+
+		system_print_serial("Starting Cortex M \n");
 
 		system_exceptions_init();
 

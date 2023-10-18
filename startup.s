@@ -7,6 +7,7 @@
 .extern system_pendSV_handler 
 .extern system_nmi_handler 
 .extern system_ext_interrupt0_handler 
+.extern system_mem_manage_fault_handler
 
 .text
 .align 2
@@ -83,7 +84,13 @@ _nmi_handler:
 .align 2 
 .thumb_func
 _mem_manage_fault_handler:
-		b _mem_manage_fault_handler 
+		ldr r0, [sp, #24] // read return address
+		add r0, r0, #4 // point to next instruction 
+		str r0, [sp, #24] // update exception stack frame with new addr
+		push {lr}
+		bl system_mem_manage_fault_handler
+		pop {lr}
+		bx lr
 
 .align 2 
 .thumb_func

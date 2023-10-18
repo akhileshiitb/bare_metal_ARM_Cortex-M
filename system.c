@@ -47,6 +47,9 @@ uint32_t gNmi_counter = 0;
 // counter for external interrupt 0
 uint32_t gInt0_counter = 0; 
 
+// memManage fault counter 
+uint32_t gMemFault_counter = 0; 
+
 /* Systic register layout */
 typedef struct systick_reg_t {
 		volatile uint32_t SYSTICK_CSR; 
@@ -342,6 +345,14 @@ static uint32_t mpu_enable()
 		return 0xAAU; 
 }
 
+static uint32_t mpu_disable()
+{
+		ptr_mpu_regs->MPU_CTRL &= ~(1U << 0U); 
+		_dsb(); // data sync barrier
+		_isb(); // instuction sync barrier
+		return 0xAAU; 
+}
+
 /* Function enabled defalut memory map as backgound region for Priv mode */
 static uint32_t mpu_enable_priv_default()
 {
@@ -386,6 +397,8 @@ static void mpu_set_region_size(uint8_t size)
 static void mpu_region_enable()
 {
 		ptr_mpu_regs->MPU_RASR |= 0b1; 
+		_dsb();
+		_isb();
 }
 
 static void mpu_region_disable()
@@ -393,6 +406,47 @@ static void mpu_region_disable()
 		ptr_mpu_regs->MPU_RASR &= ~(0b1);
 }
 
+static void mpu_set_attr_tex_s_c_b(uint8_t value)
+{
+		ptr_mpu_regs->MPU_RASR &= ~(0b111111 << 16U);
+		ptr_mpu_regs->MPU_RASR |= (value << 16U);
+}
+/* *
+ * Access permission: 0b110 priv/unpriv read only 
+ * No writes allowed
+ * */
+static void mpu_set_ap_read_only()
+{
+		mpu_set_region_access_permission(0b110U);
+}
+/* *
+ * Acecss permission: 0b001
+ * Read/write only to priv
+ * no access on unpriv
+ * */
+
+static void mpu_set_ap_priv_rw()
+{
+		mpu_set_region_access_permission(0b001U);
+}
+/* *
+ * Acecss permission: 0b101
+ * Read/write only to priv
+ * no access on unpriv
+ * */
+
+static void mpu_set_ap_priv_r()
+{
+		mpu_set_region_access_permission(0b101U);
+}
+/* *
+ * Access permission: r/w to both priv/unpriv mode.
+ * */
+static void mpu_set_ap_full()
+{
+		mpu_set_region_access_permission(0b011U);
+
+}
 
 /* Function to initilize static MPU
  * MPU configuration is as follows: 
@@ -421,12 +475,153 @@ uint32_t system_mpu_init()
 
 }
 
-void system_mpu_tests()
+void system_mem_manage_fault_handler()
 {
-		uint32_t temp; 
-		
-		system_enter_unpriv();
-		temp = ptr_mpu_regs->MPU_TYPE; 
-		system_enter_priv();
+		gMemFault_counter++; 
 }
 
+void system_mpu_tests()
+{
+		uint32_t temp_var; 
+
+		// get some memory 0x20000000 + 32KB offset is safe to take
+		void * mem_block_1_4KB = (void *)0x20008000U; // 4KB memory block
+		void * mem_block_2_4KB = (void *)(0x20008000U + (1024*4)); // 4KB memory block
+
+		// test 1: 
+		// block 1 : read only block 2: full r/w
+		// REGION 0
+		system_enter_priv(); // MPU configs needs to be done from priv state
+		// select MPU region 0
+		mpu_select_region(0x0);
+		// disable region before doing configs
+		mpu_region_disable();
+		// set region 0 base address
+		mpu_set_region_base_addr((uint32_t)mem_block_1_4KB);
+		// set region size
+		mpu_set_region_size(11U); // 4KB size pow(2, 11+1)
+		// set execute permission: no execute : XN bit
+		mpu_set_region_execute_permission(0x1U);
+		// set access permission
+		mpu_set_ap_read_only();
+		// set region attribute Normal outer/inner non chacable, sharable
+		mpu_set_attr_tex_s_c_b(0b001100);
+		// enable MPU region
+		mpu_region_enable();
+		
+		// REGION 1
+		// select MPU region 1
+		mpu_select_region(0x1);
+		// disable region before doing configs
+		mpu_region_disable();
+		// set region 1 base address
+		mpu_set_region_base_addr((uint32_t)mem_block_2_4KB);
+		// set region size
+		mpu_set_region_size(11U); // 4KB size pow(2, 11+1)
+		// set execute permission: no execute : XN bit
+		mpu_set_region_execute_permission(0x1U);
+		// set access permission
+		mpu_set_ap_full();
+		// set region attribute Normal outer/inner non chacable, sharable
+		mpu_set_attr_tex_s_c_b(0b001100);
+		// enable MPU region
+		mpu_region_enable();
+
+		// REGION 2: all code/text full enable
+		// select MPU region 2
+		mpu_select_region(0x2);
+		// disable region before doing configs
+		mpu_region_disable();
+		// set region 1 base address
+		mpu_set_region_base_addr((uint32_t)0x0); // .text section is 0x0
+		// set region size
+		mpu_set_region_size(13U); // 16KB size pow(2, 13+1)
+		// set execute permission: execute : XN bit
+		mpu_set_region_execute_permission(0x0U);
+		// set access permission
+		mpu_set_ap_full();
+		// set region attribute Normal outer/inner non chacable, sharable
+		mpu_set_attr_tex_s_c_b(0b001100);
+		// enable MPU region
+		mpu_region_enable();
+
+		// REGION 3: Full stack PSP/MSP full access no exec
+		// select MPU region 3
+		mpu_select_region(0x3);
+		// disable region before doing configs
+		mpu_region_disable();
+		// set region 1 base address
+		mpu_set_region_base_addr((uint32_t)0x2000E000); // stack base
+		// set region size
+		mpu_set_region_size(12U); // 8KB size pow(2, 12+1)
+		// set execute permission: execute : XN bit: stack no exec
+		mpu_set_region_execute_permission(0x1U);
+		// set access permission
+		mpu_set_ap_full();
+		// set region attribute Normal outer/inner non chacable, sharable
+		mpu_set_attr_tex_s_c_b(0b001100);
+		// enable MPU region
+		mpu_region_enable();
+		
+		// REGION 4: all data full enable
+		// select MPU region 4
+		mpu_select_region(0x4);
+		// disable region before doing configs
+		mpu_region_disable();
+		// set region 1 base address
+		mpu_set_region_base_addr((uint32_t)0x20000000); // .data at 0x20000000
+		// set region size
+		mpu_set_region_size(12U); // 8KB size pow(2, 12+1)
+		// set execute permission: execute : XN bit
+		mpu_set_region_execute_permission(0x0U); // Data not executable
+		// set access permission
+		mpu_set_ap_full();
+		// set region attribute Normal outer/inner non chacable, sharable
+		mpu_set_attr_tex_s_c_b(0b001100);
+		// enable MPU region
+		mpu_region_enable();
+
+		// TEST: try writing in block2  (block 2 is Read/Write)
+		*(uint32_t *)mem_block_2_4KB = 0xFF; // should pass
+		// TEST: try reading block 2 data 
+		temp_var = *(uint32_t *)mem_block_2_4KB;  // should pass
+
+		// TEST: try reading block 1 data  (block 1 is read only)
+		temp_var = *(uint32_t *)mem_block_1_4KB;  // should pass
+		// TEST: try writing in block1 
+		*(uint32_t *)mem_block_1_4KB = 0xFF; // should fail: should generate memManage fault
+
+		// Now change mem block 2 as Read only priviledged
+		// REGION 1
+		// select MPU region 1
+		mpu_select_region(0x1);
+		// disable region before doing configs
+		mpu_region_disable();
+		// set region 1 base address
+		mpu_set_region_base_addr((uint32_t)mem_block_2_4KB);
+		// set region size
+		mpu_set_region_size(11U); // 4KB size pow(2, 11+1)
+		// set execute permission: no execute : XN bit
+		mpu_set_region_execute_permission(0x1U);
+		// set access permission
+		mpu_set_ap_priv_r();
+		// set region attribute Normal outer/inner non chacable, sharable
+		mpu_set_attr_tex_s_c_b(0b001100);
+		// enable MPU region
+		mpu_region_enable();
+
+		// tests on modifier block 2: read only priviledged
+		// Current mode: Priviledged
+		temp_var = *(uint32_t *)mem_block_2_4KB; // should pass
+
+		// Switch to unpriviledged state
+		system_enter_unpriv();
+		temp_var = *(uint32_t *)mem_block_2_4KB; // should Fail
+		// Switch back to priviledged state
+		system_enter_priv();
+		temp_var = *(uint32_t *)mem_block_2_4KB; // should Pass
+		*(uint32_t *)mem_block_2_4KB = 0xDD; // should Fail
+
+		mpu_disable();
+		
+}

@@ -145,6 +145,8 @@ int main(){
 		system_enable_exceptions();
 
 		system_mpu_tests();
+
+		_trigger_usage_fault();
 	
 		while (stuck != 0)
 		{

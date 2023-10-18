@@ -85,7 +85,7 @@ _nmi_handler:
 .thumb_func
 _mem_manage_fault_handler:
 		ldr r0, [sp, #24] // read return address
-		add r0, r0, #4 // point to next instruction 
+		add r0, r0, #2 // point to next instruction 
 		str r0, [sp, #24] // update exception stack frame with new addr
 		push {lr}
 		bl system_mem_manage_fault_handler
@@ -104,7 +104,7 @@ _usage_fault_handler:
 		// as we return from invalid instruction, to avoid executing
 		// same instruction on return, increament return addr by 4
 		ldr r0, [sp, #24]
-		add r0, r0, #4
+		add r0, r0, #2 // point to next instruction
 		str r0, [sp, #24]
 		// update gUsageFault _counter
 		ldr r1, __gUsageFault_counter
